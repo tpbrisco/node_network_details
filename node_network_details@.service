@@ -1,0 +1,13 @@
+[Unit]
+Description=Node Network Details Service
+Requires=node_network_details.socket
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /usr/local/bin/node_network_details.sh
+StandardError=journal
+StandardInput=socket
+TimeoutStopSec=5
+
+[Install]
+WantedBy=multi-user.target

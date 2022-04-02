@@ -1,0 +1,9 @@
+[Unit]
+Description=Node Network Details Socket
+
+[Socket]
+ListenStream=9101
+Accept=yes
+
+[Install]
+WantedBy=sockets.target
