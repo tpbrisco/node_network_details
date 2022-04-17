@@ -55,7 +55,7 @@ function show_interface_data () {
     echo "# HELP node_network_details A list of interfaces and IP addresses"
     echo "# TYPE node_network_details gauge"
     if [[ "$IPJSON" == 1 ]]; then
-	$BINIP --json addr show | jq -Mr '.[] |.ifname as $ifname |.ifindex as $ifindex|.address as $macaddr |.addr_info[] | "node_network_details{ifname=\"\($ifname)\", macaddr=\"\($macaddr)\", addressfamily=\"\(.family)\", address=\"\(.local)\"} \($ifindex)"'
+	$BINIP --json addr show | jq -Mr '.[] |.ifname as $ifname |.ifindex as $ifindex|.address as $macaddr |.addr_info[] | "node_network_details{device=\"\($ifname)\", macaddr=\"\($macaddr)\", addressfamily=\"\(.family)\", address=\"\(.local)\"} \($ifindex)"'
     else
 	true
     fi
