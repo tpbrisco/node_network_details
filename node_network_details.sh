@@ -21,6 +21,9 @@ function err_log () {
     echo $@ >> /tmp/node_network_details-err.log
 }
 
+#
+dbg_log "Starting up " $(date)
+
 # check utilities - e.g. versions of "ip" have different capabilities
 set +e
 ip --json addr show >/dev/null 2>&1
@@ -33,10 +36,13 @@ else
     err_log "\"ip\" does not support the --json flag"
     IPJSON=0
 fi
+
+set +e
 JQ=$(type -p jq)
+set -e
 if [ "$JQ" == '' ]; then
-    err_log "\"jq\" is needed"
-    exit 1
+    dbg_log "JQ not found, no output"
+    IPJSON=0
 fi
 
 DATE="$(date)"
