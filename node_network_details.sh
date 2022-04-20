@@ -48,6 +48,30 @@ fi
 DATE="$(date)"
 dbg_log "$DATE"
 
+# get interface information the hard and fragile way
+function show_ip_painfully() {
+    ip -4  addr show | grep '^[1-9][0-9]*' -A1 > /tmp/ip4-interfaces.txt
+    ip -6  addr show | grep '^[1-9][0-9]*' -A1 > /tmp/ip6-interfaces.txt
+    cat /tmp/ip4-interfaces.txt /tmp/ip6-interfaces.txt > /tmp/ip-interfaces.txt
+    while read -r line0 ;  do
+	[ "$line0" == "--" ] && continue
+	read -r line1
+	read -r -a ifinfo <<< $(echo $line0 | awk -F: '{print $1 $2}')
+	ifindex=${ifinfo[0]}
+	ifdev=${ifinfo[1]%@*}
+	read -r -a addrinfo <<< $(echo $line1 | awk '{print $1 " " $2}')
+	iffamily=${addrinfo[0]}
+	ifnetwork=${addrinfo[1]}
+	ifaddress=${ifnetwork%/*}
+	# get MAC address
+	line2=$(ip link show dev "$ifdev" | tail -1)
+	read -r -a macinfo <<< $(echo $line2 | awk '{print $2}')
+	# print interface stats
+	echo "node_network_details{device=\"$ifdev\", macaddr=\"$macinfo\", addressfamily=\"$iffamily\", address=\"$ifaddress\"}"
+    done < /tmp/ip-interfaces.txt
+    rm -f /tmp/ip4-interfaces.txt /tmp/ip6-interfaces.txt /tmp/ip-interfaces.txt 
+}
+
 # get interface information
 function show_interface_data () {
     # print out data in a prometheus friendly way
@@ -57,7 +81,7 @@ function show_interface_data () {
     if [[ "$IPJSON" == 1 ]]; then
 	$BINIP --json addr show | jq -Mr '.[] |.ifname as $ifname |.ifindex as $ifindex|.address as $macaddr |.addr_info[] | "node_network_details{device=\"\($ifname)\", macaddr=\"\($macaddr)\", addressfamily=\"\(.family)\", address=\"\(.local)\"} \($ifindex)"'
     else
-	true
+	show_ip_painfully
     fi
 }
 
