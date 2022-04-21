@@ -67,7 +67,7 @@ function show_ip_painfully() {
 	line2=$(ip link show dev "$ifdev" | tail -1)
 	read -r -a macinfo <<< $(echo $line2 | awk '{print $2}')
 	# print interface stats
-	echo "node_network_details{device=\"$ifdev\", macaddr=\"$macinfo\", addressfamily=\"$iffamily\", address=\"$ifaddress\"}"
+	echo "node_network_details{device=\"$ifdev\", macaddr=\"$macinfo\", addressfamily=\"$iffamily\", address=\"$ifaddress\"} $ifindex"
     done < /tmp/ip-interfaces.txt
     rm -f /tmp/ip4-interfaces.txt /tmp/ip6-interfaces.txt /tmp/ip-interfaces.txt 
 }
