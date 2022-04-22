@@ -8,7 +8,7 @@ set -euo pipefail
 # default values
 INTERFACES="*"
 
-DEBUG=1
+DEBUG=0
 # debug logging
 function dbg_log () {
     if [ "$DEBUG" -eq 1 ]; then
@@ -76,7 +76,7 @@ function show_ip_painfully() {
 function show_interface_data () {
     # print out data in a prometheus friendly way
     dbg_log "Showing data"
-    echo "# HELP node_network_details A list of interfaces and IP addresses"
+    echo "# HELP node_network_details A list of interfaces and IP addresses (ip: $IPJSON)"
     echo "# TYPE node_network_details gauge"
     if [[ "$IPJSON" == 1 ]]; then
 	$BINIP --json addr show | jq -Mr '.[] |.ifname as $ifname |.ifindex as $ifindex|.address as $macaddr |.addr_info[] | "node_network_details{device=\"\($ifname)\", macaddr=\"\($macaddr)\", addressfamily=\"\(.family)\", address=\"\(.local)\"} \($ifindex)"'
