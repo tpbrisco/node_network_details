@@ -5,31 +5,33 @@
 # Install
 set -euo pipefail
 
-# default values
-INTERFACES="*"
+# debug values
+DEBUG=${DEBUG:-'0'}	# logging to /tmp
+IPTHW=${IPTHW:-'0'}		# use "ip" the hard way
 
-DEBUG=0
 # debug logging
 function dbg_log () {
     if [ "$DEBUG" -eq 1 ]; then
+	# shellcheck disable=2068
 	echo $@ >> /tmp/node_network_details-dbg.log
     fi
 }
 
 # error logging
 function err_log () {
+    # shellcheck disable=2068
     echo $@ >> /tmp/node_network_details-err.log
 }
 
 #
-dbg_log "Starting up " $(date)
+dbg_log "Starting up $(date)"
 
 # check utilities - e.g. versions of "ip" have different capabilities
 set +e
 ip --json addr show >/dev/null 2>&1
 ip_ok=$?
 set -e
-if [ $ip_ok -eq 0 ]; then
+if [[ $ip_ok -eq 0 ]] && [[ $IPTHW -ne 1 ]]; then
     BINIP="ip"
     IPJSON=1
 else
@@ -56,16 +58,19 @@ function show_ip_painfully() {
     while read -r line0 ;  do
 	[ "$line0" == "--" ] && continue
 	read -r line1
-	read -r -a ifinfo <<< $(echo $line0 | awk -F: '{print $1 $2}')
+	# shellcheck disable=2046
+	read -r -a ifinfo <<< $(echo "$line0" | awk -F: '{print $1 $2}')
 	ifindex=${ifinfo[0]}
 	ifdev=${ifinfo[1]%@*}
-	read -r -a addrinfo <<< $(echo $line1 | awk '{print $1 " " $2}')
+	# shellcheck disable=2046
+	read -r -a addrinfo <<< $(echo "$line1" | awk '{print $1 " " $2}')
 	iffamily=${addrinfo[0]}
 	ifnetwork=${addrinfo[1]}
 	ifaddress=${ifnetwork%/*}
 	# get MAC address
 	line2=$(ip link show dev "$ifdev" | tail -1)
-	read -r -a macinfo <<< $(echo $line2 | awk '{print $2}')
+	# shellcheck disable=2046
+	read -r macinfo <<< $(echo "$line2" | awk '{print $2}')
 	# print interface stats
 	echo "node_network_details{device=\"$ifdev\", macaddr=\"$macinfo\", addressfamily=\"$iffamily\", address=\"$ifaddress\"} $ifindex"
     done < /tmp/ip-interfaces.txt
@@ -86,7 +91,7 @@ function show_interface_data () {
 }
 
 show_interface_data > /tmp/node_net-$$.txt
-LEN=$(cat /tmp/node_net-$$.txt | wc -c)
+LEN=$( wc -c < /tmp/node_net-$$.txt)
 
 # send HTTP headers
 echo -en "HTTP/1.1 200 OK\r\n"
